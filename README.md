@@ -42,10 +42,10 @@ To get the latest changes
 
     Options:
 
-        -outfile string
-    Output file
-        -stdout
-    Write to standard output
-        -v    Be verbose
+    -outfile string
+        Output file
+    -stdout
+        Write to standard output
+    -v    Be verbose
 
 
