@@ -1,5 +1,6 @@
 The dmergefiles program merges columns in tab-delimited files for the same "key"
-in the first column of each file.
+in the first column of each file. It is assumed that the input files are pre-sorted
+asciibetically (if using unix sort, set env LC_ALL="C").
 
 Columns from each file are added in the order the files are specified. E.g., with
 input from two files:
