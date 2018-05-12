@@ -39,6 +39,7 @@ To get the latest changes
 
 ## Usage
 
+```
     Usage: ./dmergefiles [options] files ...
 
     Options:
@@ -48,5 +49,9 @@ To get the latest changes
     -stdout
         Write to standard output
     -v    Be verbose
+```
+	
+Input and output files are supported with (de)compression, based on the file
+name extension. Supported (de)compression: gzip, bzip2, xz.
 
 
