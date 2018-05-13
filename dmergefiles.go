@@ -66,6 +66,7 @@
 //
 //    Options:
 //
+//    -m    Skip normal behavor and just merge presorted files, like sort -m
 //    -outfile string
 //        Output file
 //    -stdout
@@ -90,6 +91,7 @@ import (
 type Context struct {
     verbose bool
     delim string
+    merge_sorted bool
     writer io.Writer
 }
 
@@ -98,7 +100,7 @@ type FileSpec struct {
     reader *bufio.Reader
     closer_func libutils.CloseFunc
     num_cols int
-    last_host string
+    last_entry string
     last_cols []string
 }
 
@@ -112,11 +114,13 @@ func main() {
     }
 
     var (
+        merge_sorted bool
         out_file string
         to_stdout bool
         verbose bool
     )
 
+    opts.BoolVar(&merge_sorted, "m", false, "Skip normal behavor and just merge presorted files, like sort -m")
     opts.StringVar(&out_file, "outfile", "", "Output file")
     opts.BoolVar(&to_stdout, "stdout", false, "Write to standard output")
     opts.BoolVar(&verbose, "v", false, "Be verbose")
@@ -134,6 +138,7 @@ func main() {
     ctx := new(Context)
     ctx.verbose = verbose
     ctx.delim = "\t"
+    ctx.merge_sorted = merge_sorted
 
     if to_stdout {
         ctx.writer = os.Stdout
@@ -175,20 +180,24 @@ func process_files(ctx *Context, file_paths []string) error {
     num_cols := init_lines(ctx, files)
 
     first := ""
+    var first_cols []string
 
     for true {
         first = ""
-        // find a hostname to work with
+        first_cols = nil
+        // find an entry to work with
         for _, file := range files {
-            if file.last_host != "" {
-                first = file.last_host
+            if file.last_entry != "" {
+                first = file.last_entry
+                first_cols = file.last_cols
                 break
             }
         }
 
         for _, file := range files {
-            if file.last_host != "" && file.last_host <= first {
-                first = file.last_host
+            if file.last_entry != "" && file.last_entry <= first {
+                first = file.last_entry
+                first_cols = file.last_cols
             }
         }
 
@@ -201,7 +210,7 @@ func process_files(ctx *Context, file_paths []string) error {
         cols = append(cols, first)
 
         for _, file := range files {
-            if file.last_host == first {
+            if file.last_entry == first {
                 if len(file.last_cols) < file.num_cols {
                     cols = append(cols, file.last_cols...)
 
@@ -220,6 +229,12 @@ func process_files(ctx *Context, file_paths []string) error {
                 empty_cols := make([]string, file.num_cols)
                 cols = append(cols, empty_cols...)
             }
+        }
+
+        if ctx.merge_sorted {
+            cols = make([]string, 0, len(first_cols) + 1)
+            cols = append(cols, first)
+            cols = append(cols, first_cols...)
         }
 
         out := strings.Join(cols, ctx.delim)
@@ -243,14 +258,14 @@ func init_lines(ctx *Context, files []*FileSpec) int {
 func get_next_line(ctx *Context, file *FileSpec) {
     line, err := file.reader.ReadString('\n')
     if err != nil {
-        file.last_host = ""
+        file.last_entry = ""
         file.last_cols = nil
         return
     }
 
     line = strings.TrimSpace(line)
     cols := strings.Split(line, ctx.delim)
-    file.last_host = cols[0]
+    file.last_entry = cols[0]
     if len(cols) > 1 {
         file.last_cols = cols[1:]
     } else {
