@@ -44,6 +44,7 @@ To get the latest changes
 
     Options:
 
+    -m    Skip normal behavor and just merge presorted files, like sort -m
     -outfile string
         Output file
     -stdout
